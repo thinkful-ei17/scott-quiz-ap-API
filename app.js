@@ -1,20 +1,21 @@
 'use strict';
+/* global $ */
 
 const TOP_LEVEL_COMPONENTS = [
   'js-intro', 'js-question', 'js-question-feedback', 'js-outro', 'js-quiz-status'
 ];
 
 const QUESTIONS = [
-  {
-    text: 'Capital of England?',
-    answers: ['London', 'Paris', 'Rome', 'Washington DC'],
-    correctAnswer: 'London'
-  },
-  {
-    text: 'How many kilometers in one mile?',
-    answers: ['0.6', '1.2', '1.6', '1.8'],
-    correctAnswer: '1.6'
-  }
+  // {
+  //   text: 'Capital of England?',
+  //   answers: ['London', 'Paris', 'Rome', 'Washington DC'],
+  //   correctAnswer: 'London'
+  // },
+  // {
+  //   text: 'How many kilometers in one mile?',
+  //   answers: ['0.6', '1.2', '1.6', '1.8'],
+  //   correctAnswer: '1.6'
+  // }
 ];
 
 const getInitialStore = function() {
@@ -28,7 +29,93 @@ const getInitialStore = function() {
 
 let store = getInitialStore();
 
+// Make API Call Functions
+//=========================
+
+let SESSION_TOKEN;
+
+function getSessionToken(){
+  // {response_code: 0, response_message: "Token Generated Successfully!", token: "16f0d44d6d4be14927278b2700b7e75261ef6c22cb0741488415656ec1ba886b"}
+  $.getJSON('https://opentdb.com/api_token.php?command=request', function(data){
+    SESSION_TOKEN = data.token;
+    return SESSION_TOKEN;
+  });
+}
+
+getSessionToken();
+
+function getQuestion(amt){
+  $.getJSON(`https://opentdb.com/api.php?amount=${amt}&type=multiple&${SESSION_TOKEN}`, questionArray);
+}
+
+const questionArray = function(data){
+  console.log('question array ran', data.results);
+  data.results.forEach(function(result){
+    let questionData = result;
+    let answersArray = [...questionData.incorrect_answers];
+    const randomIndex = Math.floor(Math.random() * (questionData.incorrect_answers.length + 1));
+    answersArray.splice(randomIndex, 0, questionData.correct_answer);
+    const question = {
+      text: questionData.question,
+      difficulty: questionData.difficulty,
+      wrongAnswers: questionData.incorrect_answers,
+      correctAnswer: questionData.correct_answer,
+      answers: answersArray
+    };
+    console.log('the answers are', question.answers);
+    console.log('the question parts are', question);
+    QUESTIONS.push(question);
+  });
+};
+
+getQuestion(5);
+
+
+// // Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+//   // Math.floor(Math.random())
+//   // category: questionData.category,
+//   ```const createQuestion = function(question) {
+//     // Copy incorrect_answers array into new all answers array
+//     const answers = [ ...question.incorrect_answers ];
+    
+//     // Pick random index from total answers length (incorrect_answers length + 1 correct_answer)
+//     const randomIndex = Math.floor(Math.random() * (question.incorrect_answers.length + 1));
+    
+//     // Insert correct answer at random place
+//     answers.splice(randomIndex, 0, question.correct_answer);
+    
+//     return {
+//       text: question.question,
+//       correctAnswer: question.correct_answer,
+//       answers
+//     };
+//   };```
+// };
+ 
+// let answerArray = function (wrongAnswers, correctAnswer){
+//   const randomIndex = Math.floor(Math.random() * (questionData.incorrect_answers.length + 1));
+//   const answers =  answers.splice(randomIndex, 0, question.correct_answer);
+// };
+// category:"Mythology"
+// correct_answer:"Nidhogg"
+// difficulty:"hard"
+// incorrect_answers:Array(3)
+//                    0:"Bragi"
+//                    1:"Odin"
+//                    2:"Ymir"
+//                    length:3
+// question:"In Norse mythology, what is the name of the serpent which eats the roots of the ash tree Yggdrasil?"
+// type:"multiple"
+
+
+  
+// }
+
+
+function turnQuestionIntoQuestionForm(){}
+
 // Helper functions
+
 // ===============
 const hideAll = function() {
   TOP_LEVEL_COMPONENTS.forEach(component => $(`.${component}`).hide());
@@ -57,9 +144,9 @@ const getCurrentQuestion = function() {
   return QUESTIONS[store.currentQuestionIndex];
 };
 
-const getQuestion = function(index) {
-  return QUESTIONS[index];
-};
+// const getQuestion = function(index) {
+//   return QUESTIONS[index];
+// };
 
 // HTML generator functions
 // ========================
@@ -109,31 +196,31 @@ const render = function() {
   $('.js-progress').html(`<span>Question ${current} of ${total}`);
 
   switch (store.page) {
-    case 'intro':
-      $('.js-intro').show();
-      break;
+  case 'intro':
+    $('.js-intro').show();
+    break;
 
-    case 'question':
-      html = generateQuestionHtml(question);
-      $('.js-question').html(html);
-      $('.js-question').show();
-      $('.quiz-status').show();
-      break;
+  case 'question':
+    html = generateQuestionHtml(question);
+    $('.js-question').html(html);
+    $('.js-question').show();
+    $('.quiz-status').show();
+    break;
 
-    case 'answer':
-      html = generateFeedbackHtml(feedback);
-      $('.js-question-feedback').html(html);
-      $('.js-question-feedback').show();
-      $('.quiz-status').show();
-      break;
+  case 'answer':
+    html = generateFeedbackHtml(feedback);
+    $('.js-question-feedback').html(html);
+    $('.js-question-feedback').show();
+    $('.quiz-status').show();
+    break;
 
-    case 'outro':
-      $('.js-outro').show();
-      $('.quiz-status').show();
-      break;
+  case 'outro':
+    $('.js-outro').show();
+    $('.quiz-status').show();
+    break;
 
-    default:
-      return;
+  default:
+    return;
   }
 };
 
